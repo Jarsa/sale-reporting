@@ -13,3 +13,4 @@
 * `ForgeFlow <https://www.forgeflow.com>`_:
 * Miquel Raïch <miquel.raich@forgeflow.com>
 * Pierre Verkest <pierreverkest84@gmail.com>
+* Alan Ramos <alan.ramos@jarsa.com>
