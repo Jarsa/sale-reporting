@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2026 Jarsa
+     License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0) -->
+<odoo>
+    <record id="paperformat_sale_order_compact" model="report.paperformat">
+        <field name="name">Sale Order Compact</field>
+        <field name="default" eval="False" />
+        <field name="format">Letter</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">14</field>
+        <field name="margin_bottom">8</field>
+        <field name="margin_left">7</field>
+        <field name="margin_right">7</field>
+        <field name="header_line" eval="False" />
+        <field name="header_spacing">9</field>
+        <field name="dpi">90</field>
+    </record>
+
+    <record id="action_report_saleorder_compact" model="ir.actions.report">
+        <field name="name">Quotation / Order (Internal)</field>
+        <field name="model">sale.order</field>
+        <field name="report_type">qweb-pdf</field>
+        <field
+            name="report_name"
+        >sale_order_report_compact.report_saleorder_compact</field>
+        <field
+            name="report_file"
+        >sale_order_report_compact.report_saleorder_compact</field>
+        <field
+            name="print_report_name"
+        >'%s (Internal) - %s' % (object.state in ('draft', 'sent') and 'Quotation' or 'Order', object.name)</field>
+        <field name="paperformat_id" ref="paperformat_sale_order_compact" />
+        <field name="binding_model_id" ref="sale.model_sale_order" />
+        <field name="binding_type">report</field>
+    </record>
+</odoo>

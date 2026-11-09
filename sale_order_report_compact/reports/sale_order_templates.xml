@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2026 Jarsa
+     License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0) -->
+<odoo>
+    <template id="report_saleorder_compact_lines">
+        <table
+            class="table table-sm table-borderless o_sale_order_report_compact_lines mb-1"
+        >
+            <thead>
+                <tr class="border-bottom border-dark">
+                    <th name="th_sequence" class="text-end">#</th>
+                    <th name="th_default_code" class="text-start">Reference</th>
+                    <th name="th_description" class="text-start">Description</th>
+                    <th name="th_quantity" class="text-end">Qty</th>
+                    <th name="th_uom" class="text-start">UoM</th>
+                    <th name="th_priceunit" class="text-end">Unit Price</th>
+                    <th
+                        name="th_discount"
+                        t-if="display_discount"
+                        class="text-end"
+                    >Disc.%</th>
+                    <th name="th_subtotal" class="text-end">Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                <t t-set="line_number" t-value="0" />
+                <t t-foreach="lines_to_report" t-as="line">
+                    <tr
+                        t-if="line.display_type in ('line_section', 'line_subsection')"
+                        name="tr_section"
+                    >
+                        <td colspan="99" class="fw-bold pt-1">
+                            <span t-field="line.name" />
+                        </td>
+                    </tr>
+                    <tr t-elif="line.display_type == 'line_note'" name="tr_note">
+                        <td colspan="99" class="fst-italic">
+                            <span t-field="line.name" />
+                        </td>
+                    </tr>
+                    <tr t-else="" name="tr_product" class="border-bottom">
+                        <t t-set="line_number" t-value="line_number + 1" />
+                        <td name="td_sequence" class="text-end" t-out="line_number" />
+                        <td name="td_default_code" class="text-nowrap">
+                            <span t-field="line.product_id.default_code" />
+                        </td>
+                        <td name="td_description">
+                            <span
+                                t-if="line.product_id"
+                                t-out="line.product_id.with_context(display_default_code=False).display_name"
+                            />
+                            <span t-else="" t-out="(line.name or '').split('\n')[0]" />
+                        </td>
+                        <td name="td_quantity" class="text-end text-nowrap">
+                            <span t-field="line.product_uom_qty" />
+                        </td>
+                        <td name="td_uom" class="text-nowrap">
+                            <span t-field="line.product_uom_id" />
+                        </td>
+                        <td name="td_priceunit" class="text-end text-nowrap">
+                            <span t-field="line.price_unit" />
+                        </td>
+                        <td
+                            name="td_discount"
+                            t-if="display_discount"
+                            class="text-end text-nowrap"
+                        >
+                            <span t-if="line.discount" t-field="line.discount" />
+                        </td>
+                        <td name="td_subtotal" class="text-end text-nowrap">
+                            <span
+                                t-if="not line.is_downpayment"
+                                t-field="line.price_subtotal"
+                            />
+                        </td>
+                    </tr>
+                </t>
+            </tbody>
+        </table>
+    </template>
+
+    <template id="report_saleorder_compact_document">
+        <t t-call="web.internal_layout">
+            <t t-set="doc" t-value="doc.with_context(lang=doc.partner_id.lang)" />
+            <t t-set="lines_to_report" t-value="doc._get_order_lines_to_report()" />
+            <t
+                t-set="display_discount"
+                t-value="any(line.discount for line in lines_to_report)"
+            />
+            <div class="page o_sale_order_report_compact" style="font-size: 8pt;">
+                <div
+                    class="d-flex justify-content-between align-items-baseline border-bottom border-dark mb-1"
+                >
+                    <h6 class="m-0 fw-bold">
+                        <span t-if="doc.state in ('draft', 'sent')">Quotation</span>
+                        <span t-else="">Order</span>
+                        <span t-field="doc.name" />
+                    </h6>
+                    <span t-field="doc.date_order" t-options="{'widget': 'date'}" />
+                </div>
+                <table class="table table-sm table-borderless mb-1" name="informations">
+                    <tr>
+                        <td class="p-0 pe-2">
+                            <strong>Customer:</strong>
+                            <span t-field="doc.partner_id.commercial_partner_id.name" />
+                            <t t-if="doc.partner_id.vat">(<span
+                                t-field="doc.partner_id.vat"
+                            />)</t>
+                        </td>
+                        <td t-if="doc.client_order_ref" class="p-0 pe-2">
+                            <strong>Customer Ref.:</strong>
+                            <span t-field="doc.client_order_ref" />
+                        </td>
+                        <td t-if="doc.user_id" class="p-0 pe-2">
+                            <strong>Salesperson:</strong>
+                            <span t-field="doc.user_id" />
+                        </td>
+                        <td t-if="doc.payment_term_id" class="p-0">
+                            <strong>Terms:</strong>
+                            <span t-field="doc.payment_term_id" />
+                        </td>
+                    </tr>
+                </table>
+                <t t-call="sale_order_report_compact.report_saleorder_compact_lines" />
+                <div class="row" name="so_total_summary">
+                    <div class="col-5 ms-auto">
+                        <table
+                            class="table table-sm table-borderless m-0"
+                            name="totals"
+                        >
+                            <tr>
+                                <td class="p-0">Untaxed Amount</td>
+                                <td class="p-0 text-end text-nowrap">
+                                    <span t-field="doc.amount_untaxed" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="p-0">Taxes</td>
+                                <td class="p-0 text-end text-nowrap">
+                                    <span t-field="doc.amount_tax" />
+                                </td>
+                            </tr>
+                            <tr class="border-top border-dark fw-bold">
+                                <td class="p-0">Total</td>
+                                <td class="p-0 text-end text-nowrap">
+                                    <span t-field="doc.amount_total" />
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <template id="report_saleorder_compact">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t
+                    t-call="sale_order_report_compact.report_saleorder_compact_document"
+                />
+            </t>
+        </t>
+    </template>
+</odoo>
