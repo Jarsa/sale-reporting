@@ -84,3 +84,37 @@ class TestSaleOrderReportCompact(TransactionCase):
             "sale.report_saleorder", self.order.ids
         )
         self.assertIn("Long sales description", html.decode())
+
+    def test_description_edited_by_salesperson(self):
+        line = self.order.order_line.filtered("product_id")
+        self.assertEqual(line._get_compact_report_description(), "Compact Widget")
+        line.name = "Widget painted in matte black\nsecond line"
+        self.assertEqual(
+            line._get_compact_report_description(), "Widget painted in matte black"
+        )
+        html = self._render(self.order)
+        self.assertIn("Widget painted in matte black", html)
+        self.assertNotIn("second line", html)
+        line.name = "[CMP-001]"
+        self.assertEqual(line._get_compact_report_description(), "Compact Widget")
+
+    def test_collapsed_section_shows_its_subtotal(self):
+        section = self.order.order_line.filtered(
+            lambda line: line.display_type == "line_section"
+        )
+        section.collapse_composition = True
+        html = self._render(self.order)
+        self.assertIn("Main Section", html)
+        self.assertNotIn('name="tr_product"', html)
+        self.assertIn('name="td_section_subtotal"', html)
+        self.assertIn("300.00", html)
+
+    def test_labels_in_customer_language(self):
+        self.env["res.lang"]._activate_lang("es_MX")
+        self.env["ir.module.module"].search(
+            [("name", "=", "sale_order_report_compact")]
+        )._update_translations(["es_MX"])
+        self.partner.lang = "es_MX"
+        html = self._render(self.order)
+        self.assertIn("Referencia", html)
+        self.assertIn("Cant.", html)
